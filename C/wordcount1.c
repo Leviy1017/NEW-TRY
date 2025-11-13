@@ -1,5 +1,3 @@
-//读写文件，统计单词，空格分词个数
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,9 +92,15 @@ void *count_words(void *arg) {
 }
 
 int main() {
-    clock_t start, end;
+    struct timespec start, end;
     double cpu_time_used;
-    start = clock();
+    
+    // 正确的错误检查方式
+    int ret = clock_gettime(CLOCK_MONOTONIC, &start);
+    if (ret != 0) {
+        perror("Error getting start time");
+        return 1;
+    }
     
     printf("Opening file...\n");
     int fd = open("english.txt", O_RDONLY);
@@ -134,7 +138,7 @@ int main() {
         thread_data[i].length = (i == NUM_THREADS - 1) ? (file_size - i * chunk_size) : chunk_size;
         thread_data[i].word_count = 0;
         
-        int ret = pthread_create(&threads[i], NULL, count_words, &thread_data[i]);
+        ret = pthread_create(&threads[i], NULL, count_words, &thread_data[i]);
         if (ret != 0) {
             fprintf(stderr, "Error creating thread: %s\n", strerror(ret));
             close(fd);
@@ -155,8 +159,13 @@ int main() {
 
     printf("Total word count: %d\n", total_word_count);
 
-    end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    ret = clock_gettime(CLOCK_MONOTONIC, &end);
+    if (ret != 0) {
+        perror("Error getting end time");
+        return 1;
+    }
+    
+    cpu_time_used = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("Time used: %f seconds\n", cpu_time_used);
 
     return 0;
