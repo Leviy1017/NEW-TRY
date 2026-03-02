@@ -10,9 +10,10 @@
 #include <ctype.h>
 #include <time.h>
 
-#define NUM_THREADS 8
+#define NUM_THREADS 6
 #define READ_SIZE 1048576
 #define LOOKAHEAD_SIZE 1024
+#define MAX_THREADS 8
 
 typedef struct {
     int fd;
@@ -93,7 +94,7 @@ void *count_words(void *arg) {
 
 int main() {
     struct timespec start, end;
-    double cpu_time_used;
+    int64_t cpu_time_used;
     
     // 正确的错误检查方式
     int ret = clock_gettime(CLOCK_MONOTONIC, &start);
@@ -128,7 +129,7 @@ int main() {
 
     pthread_t threads[NUM_THREADS];
     ThreadData thread_data[NUM_THREADS];
-
+   
     size_t chunk_size = file_size / NUM_THREADS;
     
     for (int i = 0; i < NUM_THREADS; i++) {
@@ -165,12 +166,13 @@ int main() {
         return 1;
     }
     
-    cpu_time_used = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+    // 当前的时间计算有误，应该这样计算：
+    cpu_time_used = (end.tv_sec - start.tv_sec) * 1000000000LL + (end.tv_nsec - start.tv_nsec);
     //end.tv_sec - start.tv_sec：计算秒数的差值
     //end.tv_nsec - start.tv_nsec：计算纳秒数的差值
-    // 1000000000.0：将纳秒转换为秒（1秒 = 10⁹纳秒）
+    // 1000000000.0：将秒转换为纳秒（1秒 = 10⁹纳秒）
     //两部分相加得到总的时间（秒）
-    printf("Time used: %f seconds\n", cpu_time_used);
+    printf("Time used: %ld \n", cpu_time_used);
 
     return 0;
     //时间轴：0秒 ---> start时间点 ---> 程序执行 ---> end时间点 ---> 现在

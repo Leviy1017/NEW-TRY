@@ -1,4 +1,12 @@
+*.out
+*.o
+*.exe
 a.out
+*.save
+*.swp
+*.swo
+.DS_Store
+random_data_txt
 stage2_fd
 NEW-TRY/
-*.o
+.md
